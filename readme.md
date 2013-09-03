@@ -23,6 +23,7 @@ A pure Go client for interacting with GroupMe's authentication service.
 You can also implement an `ezpassHandler`. In this example, appHandler will be
 called with a `*ezpass.Response` if successful and will not be called if
 unsuccessful.
+
     type ezpassHandler func(http.ResponseWriter, *http.Request, *ezpass.Response)
 
     func appHandler(w http.ResponseWriter, r *http.Request, u *ezpass.Response)
