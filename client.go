@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+
 	"net/http"
 	"os"
 	"time"
@@ -37,6 +38,40 @@ type Pass struct {
 func init() {
 	// maybe convert this jankiness into a Client singleton
 	URL = os.Getenv("EZPASS_URL") // override me in test, production, etc.
+}
+
+// Implement a handler function of this type to get a third *Pass argument
+type ezpassHandler func(w http.ResponseWriter, r *http.Request, p *Pass)
+
+func AuthHandler(fn ezpassHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		groupId := r.FormValue("group_id")
+
+		var pass *Pass
+		var err error
+
+		if len(groupId) > 0 {
+			pass, err = GetMembership(Token(r), groupId)
+		} else {
+			pass, err = Get(Token(r))
+		}
+
+		if err != nil {
+			switch err {
+			case ErrUnauthorized:
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			case ErrTimeout:
+				http.Error(w, err.Error(), http.StatusRequestTimeout)
+			case ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+
+		fn(w, r, pass)
+	}
 }
 
 func Get(token string) (*Pass, error) {
@@ -98,7 +133,7 @@ func perform(url string) (*Pass, error) {
 	}
 }
 
-func token(r *http.Request) (token string) {
+func Token(r *http.Request) (token string) {
 	token = r.Header.Get("X-Access-Token")
 	if len(token) > 0 {
 		return

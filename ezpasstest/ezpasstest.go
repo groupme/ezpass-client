@@ -1,9 +1,8 @@
-package test
+package ezpasstest
 
 import (
 	"fmt"
 	"github.com/bmizerany/pat"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -54,7 +53,6 @@ func NewServer() *httptest.Server {
 func handler(body string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		t := token(r)
-		log.Print("token:", t)
 		switch t {
 		case TokenOk:
 			fmt.Fprint(w, body)
@@ -71,6 +69,7 @@ func handler(body string) http.HandlerFunc {
 	}
 }
 
+// lame that this is duplicated - using ezpass.Token creates import loop
 func token(r *http.Request) (token string) {
 	token = r.Header.Get("X-Access-Token")
 	if len(token) > 0 {
