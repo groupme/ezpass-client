@@ -2,6 +2,11 @@
 
 A pure Go client for interacting with GroupMe's authentication service.
 
+## Development
+
+    go get ./...
+    go test ./...
+
 ## Usage
 
     import ezpass "github.com/groupme/ezpass-client"
