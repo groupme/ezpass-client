@@ -29,10 +29,10 @@ type Pass struct {
 		Name        string `json:"name"`
 		AvatarUrl   string `json:"avatar_url"`
 		AccessToken string `json:"access_token"`
-	} `json:"user"`
+	}
 	Membership struct {
 		Nickname string `json:"nickname"`
-	} `json:"membership,omitempty"`
+	}
 }
 
 func init() {
