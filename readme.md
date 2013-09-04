@@ -12,6 +12,7 @@ A pure Go client for interacting with GroupMe's authentication service.
     import ezpass "github.com/groupme/ezpass-client"
 
 ### As a library
+
     // get token
     token := ezpass.Token(r) // r is *http.Request
 
@@ -26,8 +27,11 @@ A pure Go client for interacting with GroupMe's authentication service.
 ### As a Handler
 
 You can also implement an `ezpassHandler`. In this example, appHandler will be
-called with a `*ezpass.PAss` if successful and will not be called if
+called with a `*ezpass.Pass` if successful and will not be called if
 unsuccessful.
+
+The handler will respond with a sensible HTTP error code and a standard
+API error JSON payload.
 
     type ezpassHandler func(http.ResponseWriter, *http.Request, *ezpass.Pass)
 
@@ -37,7 +41,7 @@ unsuccessful.
 
     http.Handle("/foo", ezpass.AuthHandler(appHandler))
 
-## Error Handling
+## Errors
 
 * `ezpass.ErrTimeout` - request timeout
 * `ezpass.ErrUnauthorized` - token is invalid

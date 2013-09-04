@@ -25,10 +25,9 @@ func TestAuthHandler(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	AuthHandler(handler)(res, req)
-
-	if res.Code != http.StatusUnauthorized {
-		t.Error("should be unauthorized")
-	}
+	assertEqual(t, res.Code, http.StatusUnauthorized)
+	assertEqual(t, res.Header().Get("Content-Type"), "application/json")
+	assertEqual(t, res.Body.String(), `{"meta":{"error":"ezpass: unauthorized"}}`+"\n")
 
 	// ok
 	req, _ = http.NewRequest("GET", "/", nil)
@@ -36,29 +35,16 @@ func TestAuthHandler(t *testing.T) {
 	res = httptest.NewRecorder()
 
 	AuthHandler(handler)(res, req)
-
-	if res.Code != http.StatusOK {
-		t.Error("should be ok")
-	}
-
-	if res.Body.String() != "Brandon Keene" {
-		t.Error("failed to get pass and user data")
-	}
+	assertEqual(t, res.Code, http.StatusOK)
+	assertEqual(t, res.Body.String(), `Brandon Keene`)
 
 	// membership
 	req, _ = http.NewRequest("GET", "/?group_id=1", nil)
 	req.Header.Add("X-Access-Token", ezpasstest.TokenOk)
 	res = httptest.NewRecorder()
-
 	AuthHandler(handler)(res, req)
-
-	if res.Code != http.StatusOK {
-		t.Error("should be ok")
-	}
-
-	if res.Body.String() != "B-money" {
-		t.Error("failed to get pass and membership data")
-	}
+	assertEqual(t, res.Code, http.StatusOK)
+	assertEqual(t, res.Body.String(), `B-money`)
 }
 
 func TestGet(t *testing.T) {
@@ -66,39 +52,20 @@ func TestGet(t *testing.T) {
 
 	// ok
 	pass, err := Get(ezpasstest.TokenOk)
-	if err != nil {
-		t.Error(err)
-	}
 
-	if pass.User.Id != "100" {
-		t.Error("User: id is incorrect")
-	}
+	assertEqual(t, err, nil)
+	assertEqual(t, pass.User.Id, "100")
+	assertEqual(t, pass.User.Name, "Brandon Keene")
+	assertEqual(t, pass.User.AvatarUrl, "http://i.groupme.com/100")
 
-	if pass.User.Name != "Brandon Keene" {
-		t.Error("User: name is incorrect")
-	}
-
-	if pass.User.AvatarUrl != "http://i.groupme.com/100" {
-		t.Error("User: avatar_url is incorrect")
-	}
-
-	// unauthorized
 	pass, err = Get(ezpasstest.TokenUnauthorized)
-	if err != ErrUnauthorized {
-		t.Error("User: error should be ErrUnauthorized")
-	}
+	assertEqual(t, err, ErrUnauthorized)
 
-	// timeout
 	pass, err = Get(ezpasstest.TokenTimeout)
-	if err != ErrTimeout {
-		t.Error("User: error should be ErrTimeout")
-	}
+	assertEqual(t, err, ErrTimeout)
 
-	// error
 	pass, err = Get(ezpasstest.TokenError)
-	if err != ErrUnknown {
-		t.Error("User: error should be ErrUnknown")
-	}
+	assertEqual(t, err, ErrUnknown)
 }
 
 func TestGetMembership(t *testing.T) {
@@ -107,49 +74,24 @@ func TestGetMembership(t *testing.T) {
 
 	// ok
 	pass, err := GetMembership(ezpasstest.TokenOk, groupId)
-	if err != nil {
-		t.Error(err)
-	}
 
-	if pass.User.Id != "100" {
-		t.Error("User: id is incorrect")
-	}
+	assertEqual(t, err, nil)
+	assertEqual(t, pass.User.Id, "100")
+	assertEqual(t, pass.User.Name, "Brandon Keene")
+	assertEqual(t, pass.User.AvatarUrl, "http://i.groupme.com/100")
+	assertEqual(t, pass.Membership.Nickname, "B-money")
 
-	if pass.User.Name != "Brandon Keene" {
-		t.Error("User: name is incorrect")
-	}
-
-	if pass.User.AvatarUrl != "http://i.groupme.com/100" {
-		t.Error("User: avatar_url is incorrect")
-	}
-
-	if pass.Membership.Nickname != "B-money" {
-		t.Error("User: nickname is incorrect")
-	}
-
-	// unauthorized
 	pass, err = GetMembership(ezpasstest.TokenUnauthorized, groupId)
-	if err != ErrUnauthorized {
-		t.Error("User: error should be ErrUnauthorized")
-	}
+	assertEqual(t, err, ErrUnauthorized)
 
-	// not found
 	pass, err = GetMembership(ezpasstest.TokenNotFound, groupId)
-	if err != ErrNotFound {
-		t.Error("User: error should be ErrNotFound")
-	}
+	assertEqual(t, err, ErrNotFound)
 
-	// timeout
 	pass, err = GetMembership(ezpasstest.TokenTimeout, groupId)
-	if err != ErrTimeout {
-		t.Error("User: error should be ErrTimeout")
-	}
+	assertEqual(t, err, ErrTimeout)
 
-	// error
 	pass, err = GetMembership(ezpasstest.TokenError, groupId)
-	if err != ErrUnknown {
-		t.Error("User: error should be ErrUnknown")
-	}
+	assertEqual(t, err, ErrUnknown)
 }
 
 func TestToken(t *testing.T) {
@@ -157,23 +99,21 @@ func TestToken(t *testing.T) {
 	reader := strings.NewReader("")
 
 	r, _ = http.NewRequest("GET", "http://example.com?token=foo", reader)
-	if Token(r) != "foo" {
-		t.Error("failed to get 'token' param")
-	}
+	assertEqual(t, Token(r), "foo")
 
 	r, _ = http.NewRequest("GET", "http://example.com?access_token=foo", reader)
-	if Token(r) != "foo" {
-		t.Error("failed to get 'access_token' param")
-	}
+	assertEqual(t, Token(r), "foo")
 
 	r, _ = http.NewRequest("GET", "http://example.com", reader)
 	r.Header.Set("X-Access-Token", "foo")
-	if Token(r) != "foo" {
-		t.Error("failed to get 'X-Access-Token' header")
-	}
+	assertEqual(t, Token(r), "foo")
 
 	r, _ = http.NewRequest("GET", "http://example.com", reader)
-	if Token(r) != "" {
-		t.Error("failed to detect missing token")
+	assertEqual(t, Token(r), "")
+}
+
+func assertEqual(t *testing.T, actual interface{}, expected interface{}) {
+	if actual != expected {
+		t.Errorf("expected %v, got %v", expected, actual)
 	}
 }

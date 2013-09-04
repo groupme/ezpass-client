@@ -57,16 +57,18 @@ func AuthHandler(fn ezpassHandler) http.HandlerFunc {
 		}
 
 		if err != nil {
+			var code int
 			switch err {
 			case ErrUnauthorized:
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				code = http.StatusUnauthorized
 			case ErrTimeout:
-				http.Error(w, err.Error(), http.StatusRequestTimeout)
+				code = http.StatusRequestTimeout
 			case ErrNotFound:
-				http.Error(w, err.Error(), http.StatusNotFound)
+				code = http.StatusNotFound
 			default:
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				code = http.StatusInternalServerError
 			}
+			apiError(w, err, code)
 			return
 		}
 
@@ -158,4 +160,11 @@ func userUrl(token string) string {
 
 func groupUrl(token string, groupId string) string {
 	return fmt.Sprintf("%s/groups/%s?access_token=%s", URL, groupId, token)
+}
+
+// Write a GroupMe API error
+func apiError(w http.ResponseWriter, err error, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	fmt.Fprintln(w, fmt.Sprintf(`{"meta":{"error":"%s"}}`, err))
 }
