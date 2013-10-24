@@ -43,9 +43,21 @@ func init() {
 // Implement a handler function of this type to get a third *Pass argument
 type ezpassHandler func(w http.ResponseWriter, r *http.Request, p *Pass)
 
+func getGroupId(r *http.Request) (id string) {
+	if id := r.FormValue("group_id"); id != "" {
+		return id
+	}
+
+	if id := r.URL.Query().Get(":group_id"); id != "" {
+		return id
+	}
+
+	return id
+}
+
 func AuthHandler(fn ezpassHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		groupId := r.FormValue("group_id")
+		groupId := getGroupId(r)
 
 		var pass *Pass
 		var err error

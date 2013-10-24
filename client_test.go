@@ -45,6 +45,16 @@ func TestAuthHandler(t *testing.T) {
 	AuthHandler(handler)(res, req)
 	assertEqual(t, res.Code, http.StatusOK)
 	assertEqual(t, res.Body.String(), `B-money`)
+
+	// membership - github.com/bmizerany/pat style
+	// this exploits the fact that RawQuery will parse :group_id
+	// in actual use, the URL would be: /a/:group_id/b
+	req, _ = http.NewRequest("GET", "/?:group_id=1", nil)
+	req.Header.Add("X-Access-Token", ezpasstest.TokenOk)
+	res = httptest.NewRecorder()
+	AuthHandler(handler)(res, req)
+	assertEqual(t, res.Code, http.StatusOK)
+	assertEqual(t, res.Body.String(), `B-money`)
 }
 
 func TestGet(t *testing.T) {
